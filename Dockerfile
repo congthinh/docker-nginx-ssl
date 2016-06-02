@@ -1,35 +1,26 @@
-## Mobivi NginX SSL
+## NginX Docker file
 ## May 2016
 
-FROM nginx:1.9.15
+FROM nginx:latest
 MAINTAINER Thinh Huynh "thinhhc@gmail.com"
 
-## Add Ubuntu Xenial to sources.list
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ xenial main universe" >> /etc/apt/sources.list
+# Add Ubuntu Trusty to sources.list
+RUN echo 'deb http://ftp.igh.cnrs.fr/pub/CRAN/bin/linux/ubuntu trusty/' >> /etc/apt/sources.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E084DAB9
+RUN apt-get update && apt-get -y upgrade
 
 # Let the container know that there is no tty 
 ENV DEBIAN_FRONTEND noninteractive
 
-#Update repo
-RUN apt-get update
+# Install Nginx
+RUN apt-get install -y nginx 
 
-# Download and Install Nginx
-RUN apt-get install -y nginx
-
-# Generate SSl Cert, key
+# Copy generated SSL Certs into ssl nginx/ssl dir
 RUN mkdir -p /etc/nginx/ssl
-RUN openssl req -batch -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt
+ADD server.crt /etc/nginx/ssl
+ADD server.key /etc/nginx/ssl
 
-# Remove the default Nginx configuration file
-RUN rm -v /etc/nginx/nginx.conf
+# Copy configuration file to nginx dir
+ADD site.conf /etc/nginx/conf.d/
 
-# Copy a configuration file from the current directory
-ADD nginx.conf /etc/nginx/
-
-# Append "daemon off;" to the beginning of the configuration
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-
-# Expose ports
 EXPOSE 443
-
-CMD service nginx start
